@@ -1,0 +1,200 @@
+#+PROPERTY header-args:lisp :results replace
+
+* tutorial
+* setup
+* sly setup
+ set or-babel-lisp-eval-fn to 'sly-eval
+
+* make the nix-shell environment
+#+name: shell.nix
+#+header: :tangle no
+#+begin_src sh
+  let
+    nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.05";
+    pkgs = import nixpkgs { config = {}; overlays = []; };
+    sbcl' = pkgs.sbcl.withPackages (
+      ps: with ps; [
+      ]
+    );
+  in
+  pkgs.mkShell {
+    packages = [
+      sbcl'
+    ];
+  }
+#+end_src
+
+* prepare .envrc
+#+name: prepare .envrc
+#+header: :tangle .envrc
+#+begin_src sh
+  use nix
+#+end_src
+
+* activate direnv
+#+begin_src sh
+  direnv allow
+#+end_src
+
+* invoke sly
+#+begin_src sh
+  ; 
+  ;     |,\__/|
+  ;     |  o o|
+  ;     (   T )    Take this REPL, brother, and may it serve you well.
+  ;    .^`--^'^.
+  ;    `.  ;  .'
+  ;    | | | | |
+  ;   ((_((|))_))
+  ;              hjw
+  ; 
+  ; Dedicated output stream setup (port 32787)
+  ; Redirecting all output to this MREPL
+  ; SLY NIL (#<MREPL mrepl-1-1>)
+  CL-USER> 
+#+end_src
+
+* check if lisp runs correctly
+#+name: hello-world
+#+header: :var message="Hello World!"
+#+begin_src lisp
+  (princ message)
+#+end_src
+
+#+RESULTS: hello-world
+Hello World!
+
+* prepare sbcl-setup
+
+#+name: sbcl-setup
+#+begin_src lisp
+  (load (sb-ext:posix-getenv "ASDF"))
+  (pushnew (truename "./.") asdf:*central-registry*)
+#+end_src
+
+#+RESULTS: sbcl-setup
+(#P"/home/ckb/cl-tutorial/"
+ #P"/home/ckb/.config/emacs/elpa/sly-20240809.2119/contrib/"
+ #P"/home/ckb/.config/emacs/elpa/sly-20240809.2119/slynk/")
+
+* make cl-tutorial.asd file
+A file name extension must be =.asd= .
+#+name: cl-tutorial.asd
+#+header: :tangle no
+#+begin_src lisp
+  (defsystem "cl-tutorial"
+    :version "0.0.1"
+    :author "antarcticafalls"
+    :license "MIT"
+    :depends-on (:hunchentoot)
+    :components ((:module "./."
+                  :components
+                  ((:file "main"))))
+    :description "")
+#+end_src
+
+* make dummy main.lisp
+#+name: mail.lisp
+#+header: :tangle no
+#+begin_src lisp
+  (in-package :cl-user)
+  (defpackage :cl-tutorial
+    (:use :cl :hunchentoot)
+    (:export
+     :main))
+  (in-package :cl-tutorial)
+
+  (defun main ())
+#+end_src
+
+* load system
+#+begin_src lisp
+   (asdf:load-system "cl-tutorial")
+#+end_src
+
+#+RESULTS
+#+begin_src sh
+ Component :HUNCHENTOOT not found, required by
+ #<SYSTEM "cl-tutorial">
+   [Condition of type ASDF/FIND-COMPONENT:MISSING-DEPENDENCY]
+
+Restarts:
+ 0: [RETRY] Retry loading HUNCHENTOOT.
+ 1: [RETRY] Retry ASDF operation.
+ 2: [CLEAR-CONFIGURATION-AND-RETRY] Retry ASDF operation after resetting the configuration.
+ 3: [RETRY] Retry SLY evaluation request.
+ 4: [*ABORT] Return to SLY's top level.
+ 5: [ABORT] abort thread (#<THREAD tid=1587638 "slynk-worker" RUNNING {100B0E5383}>)
+
+Backtrace:
+ 0: (ASDF/FIND-COMPONENT:RESOLVE-DEPENDENCY-NAME #<ASDF/SYSTEM:SYSTEM "cl-tutorial"> :HUNCHENTOOT NIL)
+ 1: (ASDF/PLAN:MAP-DIRECT-DEPENDENCIES #<ASDF/LISP-ACTION:PREPARE-OP > #<ASDF/SYSTEM:SYSTEM "cl-tutorial"> #<FUNCTION (LAMBDA (ASDF/PLAN::O ASDF/PLAN::C) :IN ASDF/PLAN:TRAVERSE-ACTION) {100B11F35B}>)
+ 2: ((LAMBDA NIL :IN ASDF/PLAN:TRAVERSE-ACTION))
+ 3: ((LAMBDA NIL :IN ASDF/ACTION:CALL-WHILE-VISITING-ACTION))
+ 4: (ASDF/PLAN:TRAVERSE-ACTION #<ASDF/PLAN:SEQUENTIAL-PLAN {100B109D23}> #<ASDF/LISP-ACTION:PREPARE-OP > #<ASDF/SYSTEM:SYSTEM "cl-tutorial"> T)
+ 5: (ASDF/PLAN:MAP-DIRECT-DEPENDENCIES #<ASDF/LISP-ACTION:PREPARE-OP > #<ASDF/COMPONENT:MODULE "cl-tutorial" "./."> #<FUNCTION (LAMBDA (ASDF/PLAN::O ASDF/PLAN::C) :IN ASDF/PLAN:TRAVERSE-ACTION) {100B11F21..
+ --more--
+#+end_src
+
+
+* hunchentoot and djula
+#+name: shell.nix revised
+#+header: :tangle shell.nix
+#+begin_src sh
+  let
+    nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.05";
+    pkgs = import nixpkgs { config = {}; overlays = []; };
+    sbcl' = pkgs.sbcl.withPackages (
+      ps: with ps; [
+        hunchentoot
+        djula
+      ]
+    );
+  in
+  pkgs.mkShell {
+    packages = [
+      sbcl'
+    ];
+  }
+#+end_src
+
+** adjust cl-tutorial.asd file
+A file name extension must be =.asd= .
+#+name: cl-tutorial.asd
+#+header: :tangle cl-tutorial.asd
+#+begin_src lisp
+  (defsystem "cl-tutorial"
+    :version "0.0.1"
+    :author "antarcticafalls"
+    :license "MIT"
+    :depends-on (:hunchentoot
+  	       :djula)
+    :components ((:module "./."
+                  :components
+                  ((:file "main"))))
+    :description "")
+#+end_src
+
+
+#+name: mail.lisp
+#+header: :tangle main.lisp
+#+begin_src lisp
+  (in-package :cl-user)
+  (defpackage :cl-tutorial
+    (:use :cl)
+    (:export
+     :main))
+  (in-package :cl-tutorial)
+  
+  (defun main ())
+#+end_src
+
+#+begin_src lisp
+  (asdf:load-system "cl-tutorial")
+#+end_src
+
+#+RESULTS:
+T
+
+
+* Fun Part Begins
