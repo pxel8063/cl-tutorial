@@ -1,0 +1,92 @@
+#+PROPERTY: header-args:lisp :results replace
+
+
+* prepare .envrc
+#+name: prepare .envrc
+#+header: :tangle .envrc
+#+begin_src sh
+  use nix
+#+end_src
+
+* prepare sbcl-setup
+
+#+name: sbcl-setup
+#+begin_src lisp
+  (load (sb-ext:posix-getenv "ASDF"))
+  (pushnew (truename "./.") asdf:*central-registry*)
+#+end_src
+
+#+RESULTS: sbcl-setup
+(#P"/home/ckb/cl-tutorial/"
+ #P"/home/ckb/.config/emacs/elpa/sly-20240809.2119/contrib/"
+ #P"/home/ckb/.config/emacs/elpa/sly-20240809.2119/slynk/")
+
+* hunchentoot and djula
+#+name: shell.nix revised
+#+header: :tangle shell.nix
+#+begin_src sh
+  let
+    nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.05";
+    pkgs = import nixpkgs { config = {}; overlays = []; };
+    sbcl' = pkgs.sbcl.withPackages (
+      ps: with ps; [
+        hunchentoot
+        djula
+      ]
+    );
+  in
+  pkgs.mkShell {
+    packages = [
+      sbcl'
+    ];
+  }
+#+end_src
+
+* main.lisp
+#+name: mail.lisp
+#+header: :tangle main.lisp
+#+begin_src lisp
+  (in-package :cl-user)
+  (defpackage :cl-tutorial
+    (:use :cl)
+    (:export
+     :main))
+  (in-package :cl-tutorial)
+  
+  (defun main ())
+#+end_src
+
+* asd adjust to compile
+#+name: cl-tutorial.asd
+#+header: :tangle cl-tutorial.asd
+#+begin_src lisp
+  (defsystem "cl-tutorial"
+    :version "0.0.1"
+    :author "antarcticafalls"
+    :license "MIT"
+    :depends-on (:hunchentoot
+  	       :djula)
+    :components ((:module "./."
+                  :components
+                  ((:file "main"))))
+    :description ""
+    :build-operation "program-op" ;; leave as is
+    :build-pathname "cl-tutorial"
+    :entry-point "cl-tutorial:main")
+#+end_src
+
+* Makefile
+#+name: cl-tutorial.asd
+#+header: :tangle Makefile
+#+begin_src sh
+  LISP ?= sbcl
+
+  build:
+  	$(LISP) --non-interactive \
+  		--eval '(load (sb-ext:posix-getenv "ASDF"))' \
+  		--eval '(pushnew (truename "./.") asdf:*central-registry*)' \
+  		--eval '(asdf:load-system :cl-tutorial)' \
+  		--eval '(asdf:make :cl-tutorial)' \
+  		--eval '(quit)'
+
+#+end_src
