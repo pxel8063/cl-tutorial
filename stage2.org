@@ -23,7 +23,7 @@
 
 * hunchentoot and djula
 #+name: shell.nix revised
-#+header: :tangle shell.nix
+#+header: :tangle no
 #+begin_src sh
   let
     nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.05";
@@ -39,6 +39,30 @@
     packages = [
       sbcl'
     ];
+  }
+#+end_src
+
+change to this
+#+name: shell.nix revised
+#+header: :tangle shell.nix
+#+begin_src sh
+  (import ./.).shell
+#+end_src
+
+* make default.nix
+#+name: default.nix 
+#+header: :tangle default.nix
+#+begin_src sh
+  let
+    nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.05";
+    pkgs = import nixpkgs { config = {}; overlays = []; };
+    cl-tutorial = pkgs.callPackage ./cl-tutorial.nix {};
+  in
+  {
+    inherit cl-tutorial;
+    shell = pkgs.mkShellNoCC {
+        inputsFrom = [ cl-tutorial ];
+    };
   }
 #+end_src
 
@@ -82,11 +106,42 @@
   LISP ?= sbcl
 
   build:
-  	$(LISP) --non-interactive \
+  	HOME=$(pwd) $(LISP) --non-interactive \
   		--eval '(load (sb-ext:posix-getenv "ASDF"))' \
   		--eval '(pushnew (truename "./.") asdf:*central-registry*)' \
   		--eval '(asdf:load-system :cl-tutorial)' \
   		--eval '(asdf:make :cl-tutorial)' \
   		--eval '(quit)'
 
+#+end_src
+
+* cl-tutorial.nix
+#+name: cl-tutorial.nix
+#+header: :tangle cl-tutorial.nix
+#+begin_src nix
+  {
+    pkgs,
+    stdenv
+  }:
+  let
+    sbcl' = pkgs.sbcl.withPackages (
+      ps: with ps; [
+        hunchentoot
+        djula
+      ]
+    );
+  in
+  stdenv.mkDerivation {
+    pname = "cl-tutorial";
+    version = "0.0.1";
+    src = builtins.path { path = ./.; name = "cl-tutorial"; };
+    buildInputs = [ sbcl' ];
+    dontStrip = true;
+    installPhase = ''
+      runHook preInstall
+      mkdir -p $out/bin
+      cp cl-tutorial $out/bin
+      runHook postInstall
+    '';
+  }
 #+end_src
