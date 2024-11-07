@@ -1,4 +1,4 @@
-#+PROPERTY header-args:lisp :results replace
+#+PROPERTY: header-args:lisp :results replace
 
 * tutorial
 * setup
