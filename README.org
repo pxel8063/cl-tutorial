@@ -112,6 +112,8 @@ A file name extension must be =.asd= .
    (asdf:load-system "cl-tutorial")
 #+end_src
 
+#+RESULTS:
+
 #+RESULTS
 #+begin_src sh
  Component :HUNCHENTOOT not found, required by
@@ -161,7 +163,7 @@ Backtrace:
 ** adjust cl-tutorial.asd file
 A file name extension must be =.asd= .
 #+name: cl-tutorial.asd
-#+header: :tangle cl-tutorial.asd
+#+header: :tangle no
 #+begin_src lisp
   (defsystem "cl-tutorial"
     :version "0.0.1"
@@ -196,5 +198,37 @@ A file name extension must be =.asd= .
 #+RESULTS:
 T
 
+* asd adjust to compile
+#+name: cl-tutorial.asd
+#+header: :tangle cl-tutorial.asd
+#+begin_src lisp
+  (defsystem "cl-tutorial"
+    :version "0.0.1"
+    :author "antarcticafalls"
+    :license "MIT"
+    :depends-on (:hunchentoot
+  	       :djula)
+    :components ((:module "./."
+                  :components
+                  ((:file "main"))))
+    :description ""
+    :build-operation "program-op" ;; leave as is
+    :build-pathname "cl-tutorial"
+    :entry-point "cl-tutorial:main")
+#+end_src
 
-* Fun Part Begins
+* Makefile
+#+name: cl-tutorial.asd
+#+header: :tangle Makefile
+#+begin_src sh
+  LISP ?= sbcl
+
+  build:
+  	$(LISP) --non-interactive \
+  		--eval '(load (sb-ext:posix-getenv "ASDF"))' \
+  		--eval '(pushnew (truename "./.") asdf:*central-registry*)' \
+  		--eval '(asdf:load-system :cl-tutorial)' \
+  		--eval '(asdf:make :cl-tutorial)' \
+  		--eval '(quit)'
+
+#+end_src
