@@ -1,0 +1,7 @@
+/.envrc
+/.direnv/
+/Makefile
+/cl-tutorial
+/cl-tutorial.asd
+/main.lisp
+/shell.nix
