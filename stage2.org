@@ -53,17 +53,26 @@ change to this
 #+name: default.nix 
 #+header: :tangle default.nix
 #+begin_src sh
-  let
-    nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.05";
-    pkgs = import nixpkgs { config = {}; overlays = []; };
-    cl-tutorial = pkgs.callPackage ./cl-tutorial.nix {};
-  in
-  {
-    inherit cl-tutorial;
-    shell = pkgs.mkShellNoCC {
+    let
+      nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.05";
+      pkgs = import nixpkgs { config = {}; overlays = []; };
+      cl-tutorial = pkgs.callPackage ./cl-tutorial.nix {};
+      sbcl' = pkgs.sbcl.withPackages (ps: with ps; [ hunchentoot djula ]);
+    in
+    {
+      inherit cl-tutorial;
+      shell = pkgs.mkShellNoCC {
         inputsFrom = [ cl-tutorial ];
-    };
-  }
+        packages = [
+          sbcl'
+          pkgs.openssl
+        ];
+       shellHook = ''
+         export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath([
+  	 pkgs.openssl ])}
+       '';
+     };
+    }
 #+end_src
 
 * main.lisp
@@ -120,28 +129,15 @@ change to this
 #+header: :tangle cl-tutorial.nix
 #+begin_src nix
   {
-    pkgs,
-    stdenv
+    pkgs
   }:
-  let
-    sbcl' = pkgs.sbcl.withPackages (
-      ps: with ps; [
-        hunchentoot
-        djula
-      ]
-    );
-  in
-  stdenv.mkDerivation {
+  pkgs.sbcl.buildASDFSystem {
     pname = "cl-tutorial";
     version = "0.0.1";
     src = builtins.path { path = ./.; name = "cl-tutorial"; };
-    buildInputs = [ sbcl' ];
-    dontStrip = true;
-    installPhase = ''
-      runHook preInstall
-      mkdir -p $out/bin
-      cp cl-tutorial $out/bin
-      runHook postInstall
-    '';
+    lispLibs = [
+      pkgs.sbclPackages.hunchentoot
+      pkgs.sbclPackages.djula
+    ];
   }
 #+end_src
