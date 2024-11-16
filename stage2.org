@@ -114,6 +114,20 @@ change to this
     :entry-point "cl-tutorial:main")
 #+end_src
 
+* Makefile
+#+name: Makefile
+#+header: :tangle Makefile
+#+begin_src sh
+  LISP ?= sbcl
+
+  build:
+  	HOME=$(pwd) $(LISP) --non-interactive \
+  		--eval '(load (sb-ext:posix-getenv "ASDF"))' \
+  		--eval '(pushnew (truename "./.") asdf:*central-registry*)' \
+  		--eval '(asdf:load-system :cl-tutorial)' \
+  		--eval '(asdf:make :cl-tutorial)' \
+  		--eval '(quit)'
+#+end_src
 * cl-tutorial.nix
 #+name: cl-tutorial.nix
 #+header: :tangle cl-tutorial.nix
