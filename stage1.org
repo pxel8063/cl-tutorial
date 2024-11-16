@@ -3,99 +3,85 @@
 * tutorial
 * setup
 * sly setup
- set or-babel-lisp-eval-fn to 'sly-eval
+ set org-babel-lisp-eval-fn to 'sly-eval
 
-* make the nix-shell environment
-#+name: shell.nix
+* Make the nix-shell environment
+First, take a look at how to create shell environments with shell.nix.
+** A basic =shell.nix= file for the lisp(sbcl) environment
+Create a =shell.nix= file in the fresh directory.
+
+#+name: basic-shell.nix
 #+header: :tangle no
+#+caption: A basic shell.nix file
 #+begin_src sh
   let
     nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.05";
     pkgs = import nixpkgs { config = {}; overlays = []; };
-    sbcl' = pkgs.sbcl.withPackages (
-      ps: with ps; [
-      ]
-    );
+    sbcl' = pkgs.sbcl.withPackages ( ps: with ps; [ ]);
   in
-  pkgs.mkShell {
-    packages = [
-      sbcl'
-    ];
+  pkgs.mkShellNoCC {
+    packages = [ sbcl' ];
   }
 #+end_src
 
-* prepare .envrc
+Enter the environment by running =nix-shell= in this project directory.
+nix-shell looks first for =shell.nix= in the current directory.
+#+begin_src sh
+  nix-shell
+#+end_src
+
+Now you are able to invoke sbcl in the project directory. Since there is no
+dependency in the environment.  You can't do almost nothing in there for now.
+Dependencies will be added in the later section of this article.
+
+** Automatic activation of the shell enviroment
+You hove to invoke =nix-shell= everytime you change to this directory. This is
+very cumbersome. By using =direnv=, you can automate this.
+
+Prepare =.envrc=. with a following content.
 #+name: prepare .envrc
 #+header: :tangle .envrc
+#+caption: .envrc
 #+begin_src sh
   use nix
 #+end_src
 
-* activate direnv
+Activate direnv by issuing following command.
 #+begin_src sh
   direnv allow
 #+end_src
 
-* invoke sly
-#+begin_src sh
-  ; 
-  ;     |,\__/|
-  ;     |  o o|
-  ;     (   T )    Take this REPL, brother, and may it serve you well.
-  ;    .^`--^'^.
-  ;    `.  ;  .'
-  ;    | | | | |
-  ;   ((_((|))_))
-  ;              hjw
-  ; 
-  ; Dedicated output stream setup (port 32787)
-  ; Redirecting all output to this MREPL
-  ; SLY NIL (#<MREPL mrepl-1-1>)
-  CL-USER> 
-#+end_src
+Now, every time you change directory to the project directory, the shell environment becomes
+automatically available.
 
-* check if lisp runs correctly
-#+name: hello-world
-#+header: :var message="Hello World!"
-#+begin_src lisp
-  (princ message)
-#+end_src
+* Packaging a minimal code
+Now that you have the lisp development environment, let's build a web server as
+an example.
+** Define cl-tutorial system and preper a server source code
+Make =cl-tutorial.asd= as following.  Notice that the first part of the file
+name is =cl-tutorial=, which is same as the package name called "cl-tutorial",
+and a file name extension must be =.asd=, not =.asdf=.
 
-#+RESULTS: hello-world
-Hello World!
+As an web server library, =hunghentoot= is used.
 
-* prepare sbcl-setup
-
-#+name: sbcl-setup
-#+begin_src lisp
-  (load (sb-ext:posix-getenv "ASDF"))
-  (pushnew (truename "./.") asdf:*central-registry*)
-#+end_src
-
-#+RESULTS: sbcl-setup
-(#P"/home/ckb/cl-tutorial/"
- #P"/home/ckb/.config/emacs/elpa/sly-20240809.2119/contrib/"
- #P"/home/ckb/.config/emacs/elpa/sly-20240809.2119/slynk/")
-
-* make cl-tutorial.asd file
-A file name extension must be =.asd= .
-#+name: cl-tutorial.asd
+#+name: initial-cl-tutorial.asd
 #+header: :tangle no
 #+begin_src lisp
   (defsystem "cl-tutorial"
     :version "0.0.1"
     :author "antarcticafalls"
     :license "MIT"
+    :description "a minimal web server as a tutorial"
     :depends-on (:hunchentoot)
     :components ((:module "./."
-                  :components
-                  ((:file "main"))))
-    :description "")
+  		:components
+  		((:file "main")))))
 #+end_src
 
-* make dummy main.lisp
-#+name: mail.lisp
+A fake server code.  you are going to revise later as needed.
+#+name: main.lisp
 #+header: :tangle no
+#+caption: main.lisp
 #+begin_src lisp
   (in-package :cl-user)
   (defpackage :cl-tutorial
@@ -104,15 +90,18 @@ A file name extension must be =.asd= .
      :main))
   (in-package :cl-tutorial)
 
-  (defun main ())
+  (defun main ()
+    (loop))
 #+end_src
 
-* load system
+** Load =cl-tutorial= system
+Invoke =sbcl= in the environment and type following to load =cl-tutorial=.
+#+name: sbcl-setup
 #+begin_src lisp
-   (asdf:load-system "cl-tutorial")
+  (load (sb-ext:posix-getenv "ASDF"))
+  (pushnew (truename "./.") asdf:*central-registry*)
+  (asdf:load-system "cl-tutorial")
 #+end_src
-
-#+RESULTS:
 
 #+RESULTS
 #+begin_src sh
@@ -137,48 +126,44 @@ Backtrace:
  5: (ASDF/PLAN:MAP-DIRECT-DEPENDENCIES #<ASDF/LISP-ACTION:PREPARE-OP > #<ASDF/COMPONENT:MODULE "cl-tutorial" "./."> #<FUNCTION (LAMBDA (ASDF/PLAN::O ASDF/PLAN::C) :IN ASDF/PLAN:TRAVERSE-ACTION) {100B11F21..
  --more--
 #+end_src
+Load fails because you don't have =hunchgentoot= in the shell environment.
 
+** Add a =hunchentoot= dependency in the shell environment
 
-* hunchentoot and djula
-#+name: shell.nix revised
+In order to make =hunchentoot= available in the nix shell environment, you need
+adjust =shell.nix=.
+#+name: shell.nix-revised
+#+caption: shell.nix revised
 #+header: :tangle shell.nix
 #+begin_src sh
   let
     nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.05";
     pkgs = import nixpkgs { config = {}; overlays = []; };
-    sbcl' = pkgs.sbcl.withPackages (
-      ps: with ps; [
-        hunchentoot
-        djula
-      ]
-    );
+    sbcl' = pkgs.sbcl.withPackages (ps: with ps; [ hunchentoot ]);
   in
-  pkgs.mkShell {
-    packages = [
-      sbcl'
-    ];
+    pkgs.mkShellNoCC {
+      packages = [ sbcl' ];
   }
 #+end_src
 
-** adjust cl-tutorial.asd file
-A file name extension must be =.asd= .
-#+name: cl-tutorial.asd
-#+header: :tangle no
+After reloading an environment by =direnv reload=,
+again you type following on sbcl repl.
+#+name: sbcl-setup
+#+caption: Load cl-tutorial system
 #+begin_src lisp
-  (defsystem "cl-tutorial"
-    :version "0.0.1"
-    :author "antarcticafalls"
-    :license "MIT"
-    :depends-on (:hunchentoot
-  	       :djula)
-    :components ((:module "./."
-                  :components
-                  ((:file "main"))))
-    :description "")
+  (load (sb-ext:posix-getenv "ASDF"))
+  (pushnew (truename "./.") asdf:*central-registry*)
+  (asdf:load-system "cl-tutorial")
 #+end_src
 
+This should bring you to the =cl-tutorial= system. Try
+#+begin_src lisp
+  (in-package :cl-tutorial)
+#+end_src
+** Implement a server code
 
-#+name: mail.lisp
+#+name: main.lisp
+#+caption: main.lisp revised
 #+header: :tangle main.lisp
 #+begin_src lisp
   (in-package :cl-user)
@@ -187,48 +172,12 @@ A file name extension must be =.asd= .
     (:export
      :main))
   (in-package :cl-tutorial)
-  
-  (defun main ())
-#+end_src
 
-#+begin_src lisp
-  (asdf:load-system "cl-tutorial")
-#+end_src
+  (hunchentoot:define-easy-handler (root-route :uri "/") (name)
+    (format nil "Hey~@[ ~A~]!" name))
+  (defvar *server* (make-instance 'hunchentoot:easy-acceptor :port 6789))
 
-#+RESULTS:
-T
-
-* asd adjust to compile
-#+name: cl-tutorial.asd
-#+header: :tangle cl-tutorial.asd
-#+begin_src lisp
-  (defsystem "cl-tutorial"
-    :version "0.0.1"
-    :author "antarcticafalls"
-    :license "MIT"
-    :depends-on (:hunchentoot
-  	       :djula)
-    :components ((:module "./."
-                  :components
-                  ((:file "main"))))
-    :description ""
-    :build-operation "program-op" ;; leave as is
-    :build-pathname "cl-tutorial"
-    :entry-point "cl-tutorial:main")
-#+end_src
-
-* Makefile
-#+name: cl-tutorial.asd
-#+header: :tangle Makefile
-#+begin_src sh
-  LISP ?= sbcl
-
-  build:
-  	$(LISP) --non-interactive \
-  		--eval '(load (sb-ext:posix-getenv "ASDF"))' \
-  		--eval '(pushnew (truename "./.") asdf:*central-registry*)' \
-  		--eval '(asdf:load-system :cl-tutorial)' \
-  		--eval '(asdf:make :cl-tutorial)' \
-  		--eval '(quit)'
-
+  (defun main ()
+    (hunchentoot:start *server*)
+    (loop))
 #+end_src

@@ -1,0 +1,4 @@
+#+TITLE: Setting up Common Lisp environmen with nix
+
+- stage1.org :: From setting up to the automatic nix shell environment
+- stage2.org :: runtime environment using nixpkgs lisp-module
