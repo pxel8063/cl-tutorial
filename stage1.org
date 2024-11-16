@@ -161,7 +161,7 @@ This should bring you to the =cl-tutorial= system. Try
   (in-package :cl-tutorial)
 #+end_src
 ** Implement a server code
-
+Instead of a fake code, implemented a very minimal server code into mail.lisp
 #+name: main.lisp
 #+caption: main.lisp revised
 #+header: :tangle main.lisp
@@ -180,4 +180,9 @@ This should bring you to the =cl-tutorial= system. Try
   (defun main ()
     (hunchentoot:start *server*)
     (loop))
+#+end_src
+
+If you load cl-tutorial system, you should see a response from the server.
+#+begin_src sh
+  curl http://localhost:6789/
 #+end_src
