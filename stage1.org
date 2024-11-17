@@ -3,7 +3,11 @@
 * tutorial
 * setup
 * sly setup
- set org-babel-lisp-eval-fn to 'sly-eval
+set org-babel-lisp-eval-fn to 'sly-eval
+
+It is very difficult to find a setup example of common lisp environment with
+nix.  I hope this article helps folks to start off the common lisp project
+utilizing nix.
 
 * Make the nix-shell environment
 First, take a look at how to create shell environments with shell.nix.
@@ -65,7 +69,7 @@ and a file name extension must be =.asd=, not =.asdf=.
 As an web server library, =hunghentoot= is used.
 
 #+name: initial-cl-tutorial.asd
-#+header: :tangle no
+#+header: :tangle cl-tutorial.asd
 #+begin_src lisp
   (defsystem "cl-tutorial"
     :version "0.0.1"
@@ -103,28 +107,26 @@ Invoke =sbcl= in the environment and type following to load =cl-tutorial=.
   (asdf:load-system "cl-tutorial")
 #+end_src
 
-#+RESULTS
 #+begin_src sh
- Component :HUNCHENTOOT not found, required by
- #<SYSTEM "cl-tutorial">
-   [Condition of type ASDF/FIND-COMPONENT:MISSING-DEPENDENCY]
 
-Restarts:
- 0: [RETRY] Retry loading HUNCHENTOOT.
- 1: [RETRY] Retry ASDF operation.
- 2: [CLEAR-CONFIGURATION-AND-RETRY] Retry ASDF operation after resetting the configuration.
- 3: [RETRY] Retry SLY evaluation request.
- 4: [*ABORT] Return to SLY's top level.
- 5: [ABORT] abort thread (#<THREAD tid=1587638 "slynk-worker" RUNNING {100B0E5383}>)
+debugger invoked on a ASDF/FIND-COMPONENT:MISSING-DEPENDENCY in thread
+#<THREAD tid=2056565 "main thread" RUNNING {10003F0143}>:
+  Component :HUNCHENTOOT not found, required by #<SYSTEM "cl-tutorial">
 
-Backtrace:
- 0: (ASDF/FIND-COMPONENT:RESOLVE-DEPENDENCY-NAME #<ASDF/SYSTEM:SYSTEM "cl-tutorial"> :HUNCHENTOOT NIL)
- 1: (ASDF/PLAN:MAP-DIRECT-DEPENDENCIES #<ASDF/LISP-ACTION:PREPARE-OP > #<ASDF/SYSTEM:SYSTEM "cl-tutorial"> #<FUNCTION (LAMBDA (ASDF/PLAN::O ASDF/PLAN::C) :IN ASDF/PLAN:TRAVERSE-ACTION) {100B11F35B}>)
- 2: ((LAMBDA NIL :IN ASDF/PLAN:TRAVERSE-ACTION))
- 3: ((LAMBDA NIL :IN ASDF/ACTION:CALL-WHILE-VISITING-ACTION))
- 4: (ASDF/PLAN:TRAVERSE-ACTION #<ASDF/PLAN:SEQUENTIAL-PLAN {100B109D23}> #<ASDF/LISP-ACTION:PREPARE-OP > #<ASDF/SYSTEM:SYSTEM "cl-tutorial"> T)
- 5: (ASDF/PLAN:MAP-DIRECT-DEPENDENCIES #<ASDF/LISP-ACTION:PREPARE-OP > #<ASDF/COMPONENT:MODULE "cl-tutorial" "./."> #<FUNCTION (LAMBDA (ASDF/PLAN::O ASDF/PLAN::C) :IN ASDF/PLAN:TRAVERSE-ACTION) {100B11F21..
- --more--
+Type HELP for debugger help, or (SB-EXT:EXIT) to exit from SBCL.
+
+restarts (invokable by number or by possibly-abbreviated name):
+  0: [RETRY                        ] Retry loading HUNCHENTOOT.
+  1:                                 Retry ASDF operation.
+  2: [CLEAR-CONFIGURATION-AND-RETRY] Retry ASDF operation after resetting the
+                                     configuration.
+  3: [ABORT                        ] Exit debugger, returning to top level.
+
+(ASDF/FIND-COMPONENT:RESOLVE-DEPENDENCY-NAME #<ASDF/SYSTEM:SYSTEM "cl-tutorial"> :HUNCHENTOOT NIL)
+   error finding frame source: Bogus form-number: the source file has probably
+                               changed too much to cope with.
+   source: NIL
+0]
 #+end_src
 Load fails because you don't have =hunchgentoot= in the shell environment.
 
@@ -148,7 +150,7 @@ adjust =shell.nix=.
 
 After reloading an environment by =direnv reload=,
 again you type following on sbcl repl.
-#+name: sbcl-setup
+#+name: sbcl-setup revised
 #+caption: Load cl-tutorial system
 #+begin_src lisp
   (load (sb-ext:posix-getenv "ASDF"))
@@ -156,10 +158,25 @@ again you type following on sbcl repl.
   (asdf:load-system "cl-tutorial")
 #+end_src
 
+#+RESULTS: sbl-setup revised
+WARNING: System definition file #P"/nix/store/db65yvmfx3zscw71kfkqz2rnnmj5kngw-sbcl-hunchentoot-v1.3.0/hunchentoot.asd" contains definition for system "hunchentoot-test". Please only define "hunchentoot" and secondary systems with a name starting with "hunchentoot/" (e.g. "hunchentoot/test") in that file.
+WARNING: System definition file #P"/nix/store/db65yvmfx3zscw71kfkqz2rnnmj5kngw-sbcl-hunchentoot-v1.3.0/hunchentoot.asd" contains definition for system "hunchentoot-dev". Please only define "hunchentoot" and secondary systems with a name starting with "hunchentoot/" (e.g. "hunchentoot/test") in that file.
+; compiling file "/home/c/cl-tutorial/main.lisp" (written 16 NOV 2024 10:19:26 PM):
+
+; wrote /home/c/.cache/common-lisp/sbcl-2.4.4-linux-arm64/home/c/cl-tutorial/main-tmpGHU3ALSV.fasl
+; compilation finished in 0:00:00.011
+T
+
+
 This should bring you to the =cl-tutorial= system. Try
 #+begin_src lisp
   (in-package :cl-tutorial)
 #+end_src
+
+#+RESULT:
+#<PACKAGE "CL-TUTORIAL">
+
+
 ** Implement a server code
 Instead of a fake code, implemented a very minimal server code into mail.lisp
 #+name: main.lisp
@@ -184,5 +201,43 @@ Instead of a fake code, implemented a very minimal server code into mail.lisp
 
 If you load cl-tutorial system, you should see a response from the server.
 #+begin_src sh
-  curl http://localhost:6789/
+  curl -v http://localhost:6789/
 #+end_src
+
+#+begin_src sh
+,* Host localhost:6789 was resolved.
+,* IPv6: ::1
+,* IPv4: 127.0.0.1
+,*   Trying [::1]:6789...
+,* connect to ::1 port 6789 from ::1 port 49520 failed: Connection refused
+,*   Trying 127.0.0.1:6789...
+,* Connected to localhost (127.0.0.1) port 6789
+> GET / HTTP/1.1
+> Host: localhost:6789
+> User-Agent: curl/8.7.1
+> Accept: */*
+>
+,* Request completely sent off
+< HTTP/1.1 200 OK
+< Content-Length: 4
+< Date: Sun, 17 Nov 2024 11:47:47 GMT
+< Server: Hunchentoot 1.3.0
+< Content-Type: text/html; charset=utf-8
+<
+,* Connection #0 to host localhost left intact
+Hey!⏎
+#+end_src
+
+* Appendix
+The directory structure is following.
+
+#+name directory-structue
+#+caption: The directory structure
+#+header: :tangle no
+#+begin_src sh
+.
+├── .envrc
+├── cl-tutorial.asd
+├── main.lisp
+└── shell.nix
+#+end_src sh
