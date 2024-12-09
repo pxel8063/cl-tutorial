@@ -75,3 +75,28 @@
     (fresh-line *debug-io*)
     (dotimes (i indent) (princ "  " *debug-io*))
     (apply #'format *debug-io* format-string args)))
+
+(defun tesst (src)
+  (cond ((> (length src) 0 )
+	 (cons (char src 0) (tesst (subseq src 1))))
+	(t nil)))
+
+(defun build-coordinate (seq y)
+  (loop for i from 0 to (- (length seq) 1)
+	when (char/= #\. (char seq i)) collect (list (char seq i) i y)))
+
+(defun make-coordinate (k x y)
+  "Make coordinate as a list of (k x y) from x y ignoring #\."
+  (if (char= k #\.)
+      nil
+      (list k x y)))
+
+(defun adve8 ()
+  (let* ((in (open "/tmp/8.txt"))
+	 (aa (when in
+	       (loop for line = (read-line in nil)
+		     for y = 0 then (+ y 1)
+		     while line
+		     append (build-coordinate line y)))))
+    (close in)
+    aa))
