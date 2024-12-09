@@ -2,3 +2,4 @@
 
 - stage1.org :: From setting up to the automatic nix shell environment
 - stage2.org :: runtime environment using nixpkgs lisp-module
+- setup.lisp :: It explains how to load cl-tutorial
