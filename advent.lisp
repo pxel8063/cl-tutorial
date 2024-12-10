@@ -21,7 +21,7 @@
       (+ (abs (- (first c1) (first c2)))
 	 (sss (rest c1) (rest c2)))
       0))
-
+(defvar fail nil)
 (defun tree-search (states goal-p successors combiner)
   "Find a state that satisfies goal-p.  Start with states,
   and search according to successors and combiner."
@@ -92,7 +92,7 @@
       (list k x y)))
 
 (defun adve8 ()
-  (let* ((in (open "/tmp/8.txt"))
+  (let* ((in (open "/tmp/8a.txt"))
 	 (aa (when in
 	       (loop for line = (read-line in nil)
 		     for y = 0 then (+ y 1)
@@ -100,3 +100,76 @@
 		     append (build-coordinate line y)))))
     (close in)
     aa))
+
+
+(defun coord-x (a)
+  (first a))
+
+(defun coord-y (a)
+  (second a))
+
+(defun antenna-letter (a)
+  (first a))
+
+
+(defun antinode (a b)
+  "return antinode, unless a and b is the same"
+  (if (some #'/= a b)
+      (let ((p        (list (- (* 2 (coord-x a)) (coord-x b)) (- (* 2 (coord-y a)) (coord-y b)))))
+	(if (on-map-p p)
+	    (list p)
+	    nil))			; a - b -> 2 * a -b
+      nil))
+
+(remove-duplicates (mapcar #'antenna-letter (adve8)))
+
+(defun identify-antinode (cp)
+  "Cp cross-product"
+  (antinode (first cp) (second cp)))
+
+(defun antinode-set (position-list)
+  "return atinode-set from position-list"
+  (let ((cp (cross-product #'list position-list position-list)))
+    (remove-duplicates (mappend #'identify-antinode cp)
+		       :test #'(lambda (x y) (not (some #'/= x y))))))
+
+;;(loop for i in (remove-duplicates (mapcar #'antenna-letter (adve8)))
+(remove-if-not #'(lambda (x) (char= #\0 x)) (adve8) :key #'antenna-letter)
+
+(defun on-map-p (a)
+  "cordinate on the map?"
+  (every #'(lambda (x)
+	     (and (> x -1) (< x 50)))
+	 a))
+  
+(defun mappend (fn the-list)
+  "Apply fn to each element of list and append the results."
+  (apply #'append (mapcar fn the-list)))
+
+(defun cross-product (fn xlist ylist)
+  "Return a list of all (fn x y) values."
+  (mappend #'(lambda (y)
+	       (mapcar #'(lambda (x) (funcall fn x y)) xlist))
+	   ylist))
+
+(defun sssss (state)
+  "return the function which returns position list takes letter "
+  #'(lambda (k)
+      (mapcar #'rest
+	      (remove-if #'(lambda (x)
+			     (char= (first x) k)) state))))
+  
+(defun count-antinode ()
+  (let ((state)
+	(letter)
+	(antinode))
+    (setf state (adve8))
+    (setf letter (remove-duplicates (mapcar #'antenna-letter state)))
+    (setf antinode (mappend #'antinode-set (mapcar (sssss state) letter)))
+    (count-if #'on-map-p (remove-duplicates antinode :test #'(lambda (x y) (not (some #'/= x y)))))))
+    
+
+    
+    ;(setf letter (remove-duplicates (mapcar #'antenna-letter state))
+    
+
