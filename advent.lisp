@@ -130,8 +130,7 @@
 (defun antinode-set (position-list)
   "return atinode-set from position-list"
   (let ((cp (cross-product #'list position-list position-list)))
-    (remove-duplicates (mappend #'identify-antinode cp)
-		       :test #'(lambda (x y) (not (some #'/= x y))))))
+    (mapcar (map-function-antinode *antinodes*) (mappend #'identify-antinode cp))))
 
 ;;(loop for i in (remove-duplicates (mapcar #'antenna-letter (adve8)))
 (remove-if-not #'(lambda (x) (char= #\0 x)) (adve8) :key #'antenna-letter)
@@ -157,19 +156,34 @@
   #'(lambda (k)
       (mapcar #'rest
 	      (remove-if #'(lambda (x)
-			     (char= (first x) k)) state))))
+			     (char/= (first x) k))
+			 state))))
   
 (defun count-antinode ()
   (let ((state)
 	(letter)
-	(antinode))
+	(antinode 0))
     (setf state (adve8))
     (setf letter (remove-duplicates (mapcar #'antenna-letter state)))
-    (setf antinode (mappend #'antinode-set (mapcar (sssss state) letter)))
-    (count-if #'on-map-p (remove-duplicates antinode :test #'(lambda (x y) (not (some #'/= x y)))))))
+    (mapcar #'antinode-set (mapcar (sssss state) letter))
+    (dotimes (x 50)
+      (dotimes (y 50)
+	(when (aref *antinodes* x y)
+	  (setf antinode (+ 1 antinode)))))
+    antinode))
+;;    (count-if #'on-map-p (remove-duplicates antinode :test #'(lambda (x y) (not (some #'/= x y)))))))
     
 
     
     ;(setf letter (remove-duplicates (mapcar #'antenna-letter state))
     
 
+(defun insert-coordinate (array p)
+  "Insert the coordinate of p into array"
+  (setf (aref array (coord-x p) (coord-y p)) t))
+
+(defparameter *antinodes* (make-array '(50 50) :initial-element nil))
+
+(defun map-function-antinode (array)
+  #'(lambda (p)
+      (insert-coordinate array p)))
