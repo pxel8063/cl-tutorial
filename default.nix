@@ -16,5 +16,6 @@ in
      export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath([
 	 pkgs.openssl ])}
    '';
+   JAVA_HOME = "/usr/local/Cellar/openjdk/23.0.1";
  };
 }
