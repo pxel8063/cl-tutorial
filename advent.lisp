@@ -187,3 +187,13 @@
 (defun map-function-antinode (array)
   #'(lambda (p)
       (insert-coordinate array p)))
+
+(defun create-list-of-equations (exp)
+  "Separate out equations embedded in nested parens."
+  (cond ((null exp) nil)
+	((atom (first exp)) (list exp))
+	(t (append (create-list-of-equations (first exp))
+		   (create-list-of-equations (rest exp))))))
+
+(defun ()
+  (cond (())))
