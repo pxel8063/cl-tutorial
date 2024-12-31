@@ -4,14 +4,20 @@ let
   myutils = pkgs.callPackage ./myutils.nix {};
   brave_search = pkgs.callPackage ./brave_search.nix { inherit myutils; };
   cl-tutorial = pkgs.callPackage ./cl-tutorial.nix {};
-  sbcl' = pkgs.sbcl.withPackages (ps: with ps; [ hunchentoot djula cl-json brave_search ]);
+  sbcl' = pkgs.sbcl.withPackages (ps: with ps; [
+    brave_search
+    cl-json
+    cl-tutorial
+    djula
+    hunchentoot
+    myutils
+  ]);
 in
 {
   inherit brave_search;
   inherit cl-tutorial;
   inherit myutils;
   shell = pkgs.mkShellNoCC {
-    inputsFrom = [ brave_search cl-tutorial myutils ];
     packages = [
       pkgs.zulu23
       sbcl'
