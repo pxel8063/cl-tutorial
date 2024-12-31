@@ -19,7 +19,7 @@ in
     ];
    shellHook = ''
      export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath([
-	 pkgs.openssl ])}
+	                          pkgs.openssl ])}
    '';
    JAVA_HOME = "${pkgs.zulu23}";
 #   JAVA_HOME = "/usr/local/Cellar/openjdk/23.0.1";
