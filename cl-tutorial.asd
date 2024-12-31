@@ -3,9 +3,7 @@
   :author "antarcticafalls"
   :license "MIT"
   :description "a minimal web server as a tutorial"
-  :depends-on (:hunchentoot
-	       :trivia
-	       :trivia.ppcre)
+  :depends-on (:hunchentoot)
   :components ((:module "./."
 		:components
 		((:file "main")))))

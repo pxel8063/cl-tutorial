@@ -1,13 +1,15 @@
 let
   nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.11";
   pkgs = import nixpkgs { config = {}; overlays = []; };
+  brave_search = pkgs.callPackage ./brave_search.nix {};
   cl-tutorial = pkgs.callPackage ./cl-tutorial.nix {};
-  sbcl' = pkgs.sbcl.withPackages (ps: with ps; [ hunchentoot djula trivia]);
+  sbcl' = pkgs.sbcl.withPackages (ps: with ps; [ hunchentoot djula cl-json ]);
 in
 {
+  inherit brave_search;
   inherit cl-tutorial;
   shell = pkgs.mkShellNoCC {
-    inputsFrom = [ cl-tutorial ];
+    inputsFrom = [ brave_search cl-tutorial];
     packages = [
       pkgs.zulu23
       sbcl'

@@ -1,6 +1,6 @@
 (in-package :cl-user)
 (defpackage :cl-tutorial
-  (:use :cl :trivia :trivia.ppcre)
+  (:use :cl)
   (:export
    :main))
 (in-package :cl-tutorial)
