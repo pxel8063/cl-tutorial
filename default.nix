@@ -15,7 +15,6 @@ let
 in
 {
   inherit cl-tutorial;
-  inherit myutils;
   shell = pkgs.mkShellNoCC {
     packages = [
       pkgs.zulu23
