@@ -4,7 +4,7 @@ let
   myutils = pkgs.callPackage ./myutils.nix {};
   brave_search = pkgs.callPackage ./brave_search.nix { inherit myutils; };
   cl-tutorial = pkgs.callPackage ./cl-tutorial.nix {};
-  sbcl' = pkgs.sbcl.withPackages (ps: with ps; [ hunchentoot djula cl-json ]);
+  sbcl' = pkgs.sbcl.withPackages (ps: with ps; [ hunchentoot djula cl-json brave_search ]);
 in
 {
   inherit brave_search;
