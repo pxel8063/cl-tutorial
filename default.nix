@@ -14,7 +14,6 @@ let
   ]);
 in
 {
-  inherit brave_search;
   inherit cl-tutorial;
   inherit myutils;
   shell = pkgs.mkShellNoCC {
