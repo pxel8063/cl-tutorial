@@ -2,3 +2,4 @@
 (pushnew (truename "./.") asdf:*central-registry*)
 (declaim (optimize (speed 0) (space 0) (debug 3)))
 (asdf:load-system :cl-tutorial)
+(asdf:load-system :brave_search)
