@@ -11,6 +11,7 @@ let
     djula
     hunchentoot
     myutils
+    trivia
   ]);
 in
 {

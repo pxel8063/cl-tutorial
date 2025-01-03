@@ -6,7 +6,8 @@ pkgs.sbcl.buildASDFSystem {
   version = "0.0.1";
   src = builtins.path { path = ./.; name = "cl-tutorial"; };
   lispLibs = [
-    pkgs.sbclPackages.hunchentoot
     pkgs.sbclPackages.djula
+    pkgs.sbclPackages.hunchentoot
+    pkgs.sbclPackages.trivia
   ];
 }
