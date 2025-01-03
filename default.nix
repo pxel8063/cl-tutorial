@@ -7,6 +7,7 @@ let
   sbcl' = pkgs.sbcl.withPackages (ps: with ps; [
     brave_search
     cl-json
+    cl-ppcre
     cl-tutorial
     djula
     hunchentoot

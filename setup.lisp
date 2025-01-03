@@ -4,3 +4,4 @@
 (asdf:load-system :cl-tutorial)
 (asdf:load-system :brave_search)
 (asdf:load-system "trivia")
+(asdf:load-system "cl-ppcre")
